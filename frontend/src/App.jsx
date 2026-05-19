@@ -3,6 +3,10 @@ import axios from 'axios'
 
 function App() {
 
+  // =========================
+  // STATES
+  // =========================
+
   const [movie, setMovie] = useState("")
   const [moviesData, setMoviesData] = useState([])
   const [loading, setLoading] = useState(false)
@@ -16,6 +20,21 @@ function App() {
   const [activeCategory, setActiveCategory] = useState("home")
 
   const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY
+
+  // JWT TOKEN
+  const token = localStorage.getItem("token")
+
+  // =========================
+  // LOGOUT
+  // =========================
+
+  const handleLogout = () => {
+
+    localStorage.removeItem("token")
+
+    window.location.reload()
+
+  }
 
   // =========================
   // FETCH HOMEPAGE MOVIES
@@ -57,7 +76,9 @@ function App() {
       setTopRatedMovies(topRatedResponse.data.results)
 
     } catch (error) {
+
       console.log(error)
+
     }
 
   }
@@ -76,7 +97,8 @@ function App() {
 
       setSearchedMovie(movie)
 
-      // Search movie from TMDB
+      // SEARCH MOVIE FROM TMDB
+
       const mainMovieResponse = await axios.get(
         `https://api.themoviedb.org/3/search/movie`,
         {
@@ -87,7 +109,8 @@ function App() {
         }
       )
 
-      // If movie not found
+      // MOVIE NOT FOUND
+
       if (mainMovieResponse.data.results.length === 0) {
 
         alert("Movie not found")
@@ -95,23 +118,26 @@ function App() {
         setLoading(false)
 
         return
+
       }
 
-      // Main movie data
+      // MAIN MOVIE
+
       const selectedMovie =
         mainMovieResponse.data.results[0]
 
-      // Save movie banner data
       setMainMovieData(selectedMovie)
 
-      // Create MovieLens title
+      // MOVIELENS FORMAT
+
       const movieYear =
         selectedMovie.release_date?.split("-")[0]
 
       const backendMovieTitle =
         `${selectedMovie.title} (${movieYear})`
 
-      // Call Django Hybrid AI Backend
+      // DJANGO AI BACKEND
+
       const response = await axios.get(
         `http://127.0.0.1:8000/api/recommend/?movie=${encodeURIComponent(backendMovieTitle)}&user_id=1`
       )
@@ -121,7 +147,8 @@ function App() {
 
       let movieResults = []
 
-      // Fetch TMDB movie details
+      // TMDB DETAILS
+
       for (const movieName of recommendedMovies) {
 
         const tmdbResponse = await axios.get(
@@ -218,11 +245,13 @@ function App() {
         <div className="flex items-center justify-between px-8 py-5">
 
           {/* LOGO */}
+
           <h1 className="text-3xl font-bold text-red-600">
             🎬 CineMind AI
           </h1>
 
           {/* NAVIGATION */}
+
           <div className="flex gap-8 text-lg font-medium">
 
             <button
@@ -272,9 +301,41 @@ function App() {
 
           </div>
 
-          {/* PROFILE */}
-          <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center font-bold">
-            M
+          {/* AUTH BUTTONS */}
+
+          <div className="flex gap-4">
+
+            {!token ? (
+
+              <>
+
+                <a
+                  href="/login"
+                  className="bg-zinc-800 px-5 py-2 rounded-lg hover:bg-zinc-700 transition"
+                >
+                  Login
+                </a>
+
+                <a
+                  href="/signup"
+                  className="bg-red-600 px-5 py-2 rounded-lg hover:bg-red-700 transition"
+                >
+                  Signup
+                </a>
+
+              </>
+
+            ) : (
+
+              <button
+                onClick={handleLogout}
+                className="bg-red-600 px-5 py-2 rounded-lg hover:bg-red-700 transition"
+              >
+                Logout
+              </button>
+
+            )}
+
           </div>
 
         </div>
