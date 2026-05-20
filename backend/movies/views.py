@@ -1,18 +1,25 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes
 
-from .hybrid_recommender import hybrid_recommendation
+from .personalized_recommender import (
+    personalized_recommendation
+)
+
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
+
 def recommend_movies(request):
 
     user_id = request.GET.get('user_id', 1)
 
     movie = request.GET.get('movie')
 
-    recommendations = hybrid_recommendation(
-        movie_title=movie,
-        user_id=int(user_id)
-    )
+    recommendations = personalized_recommendation(
+        selected_movie,
+        request.user
+)
 
     return Response({
         "recommendations": recommendations

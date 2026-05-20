@@ -1,8 +1,9 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-
-from .models import FavoriteMovie
-
+from .models import (
+    FavoriteMovie,
+    WatchedMovie
+)
 
 # =========================
 # REGISTER SERIALIZER
@@ -44,5 +45,21 @@ class FavoriteMovieSerializer(serializers.ModelSerializer):
     class Meta:
 
         model = FavoriteMovie
+
+        fields = '__all__'
+
+class WatchedMovieSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = WatchedMovie
+
+        fields = '__all__'
+
+class WatchedMovieSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = WatchedMovie
 
         fields = '__all__'

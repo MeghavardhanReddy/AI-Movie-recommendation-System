@@ -9,11 +9,14 @@ from django.shortcuts import get_object_or_404
 
 from .serializers import (
     RegisterSerializer,
-    FavoriteMovieSerializer
+    FavoriteMovieSerializer,
+    WatchedMovieSerializer
 )
 
-from .models import FavoriteMovie
-
+from .models import (
+    FavoriteMovie,
+    WatchedMovie
+)
 
 # =========================
 # REGISTER USER
@@ -128,3 +131,93 @@ def remove_favorite(request, movie_id):
         "message": "Removed from favorites"
 
     })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+
+def add_watch_history(request):
+
+    data = request.data
+
+    existing_movie = WatchedMovie.objects.filter(
+
+        user=request.user,
+
+        movie_title=data['movie_title']
+
+    ).first()
+
+    if existing_movie:
+
+        return Response({
+            "message": "Already in history"
+        })
+
+    watched_movie = WatchedMovie.objects.create(
+
+        user=request.user,
+
+        movie_title=data['movie_title'],
+
+        poster_path=data['poster_path']
+
+    )
+
+    serializer = WatchedMovieSerializer(
+        watched_movie
+    )
+
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+
+def add_watch_history(request):
+
+    data = request.data
+
+    existing_movie = WatchedMovie.objects.filter(
+
+        user=request.user,
+
+        movie_title=data['movie_title']
+
+    ).first()
+
+    if existing_movie:
+
+        return Response({
+            "message": "Already in history"
+        })
+
+    watched_movie = WatchedMovie.objects.create(
+
+        user=request.user,
+
+        movie_title=data['movie_title'],
+
+        poster_path=data['poster_path']
+
+    )
+
+    serializer = WatchedMovieSerializer(
+        watched_movie
+    )
+
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+
+def get_watch_history(request):
+
+    history = WatchedMovie.objects.filter(
+        user=request.user
+    ).order_by('-watched_at')
+
+    serializer = WatchedMovieSerializer(
+        history,
+        many=True
+    )
+
+    return Response(serializer.data)

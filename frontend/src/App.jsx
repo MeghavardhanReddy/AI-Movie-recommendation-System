@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+
+import {
+  Link,
+  useNavigate
+} from 'react-router-dom'
+
 import axios from 'axios'
 
 import {
@@ -8,7 +13,18 @@ import {
   removeFavorite
 } from './services/favoriteService'
 
+import {
+  addWatchHistory,
+  getWatchHistory
+} from './services/historyService'
+
 function App() {
+
+  // =========================
+  // NAVIGATION
+  // =========================
+
+  const navigate = useNavigate()
 
   // =========================
   // STATES
@@ -17,16 +33,27 @@ function App() {
   const [movie, setMovie] = useState("")
   const [moviesData, setMoviesData] = useState([])
   const [loading, setLoading] = useState(false)
-  const [searchedMovie, setSearchedMovie] = useState("")
-  const [mainMovieData, setMainMovieData] = useState(null)
 
-  const [trendingMovies, setTrendingMovies] = useState([])
-  const [popularMovies, setPopularMovies] = useState([])
-  const [topRatedMovies, setTopRatedMovies] = useState([])
+  const [searchedMovie, setSearchedMovie] =
+    useState("")
 
-  const [favorites, setFavorites] = useState([])
+  const [mainMovieData, setMainMovieData] =
+    useState(null)
 
-  const [activeCategory, setActiveCategory] = useState("home")
+  const [trendingMovies, setTrendingMovies] =
+    useState([])
+
+  const [popularMovies, setPopularMovies] =
+    useState([])
+
+  const [topRatedMovies, setTopRatedMovies] =
+    useState([])
+
+  const [favorites, setFavorites] =
+    useState([])
+
+  const [activeCategory, setActiveCategory] =
+    useState("home")
 
   const TMDB_API_KEY =
     import.meta.env.VITE_TMDB_API_KEY
@@ -34,7 +61,8 @@ function App() {
   const token =
     localStorage.getItem("token")
 
-  const navigate = useNavigate()
+  const [watchHistory, setWatchHistory] =
+    useState([])
 
   // =========================
   // LOGOUT
@@ -44,7 +72,7 @@ function App() {
 
     localStorage.removeItem("token")
 
-    navigate("/")
+    navigate("/login")
 
   }
 
@@ -83,7 +111,7 @@ function App() {
   }
 
   // =========================
-  // ADD FAVORITE
+  // FAVORITE TOGGLE
   // =========================
 
   const handleFavorite = async (movie) => {
@@ -132,6 +160,7 @@ function App() {
     }
 
   }
+
   // =========================
   // FETCH HOMEPAGE MOVIES
   // =========================
@@ -228,6 +257,21 @@ function App() {
 
       setMainMovieData(selectedMovie)
 
+      if (token) {
+
+        await addWatchHistory({
+
+          movie_title: selectedMovie.title,
+
+          poster_path:
+            `https://image.tmdb.org/t/p/w500${selectedMovie.poster_path}`
+
+        })
+
+        fetchWatchHistory()
+
+      }
+
       const movieYear =
         selectedMovie.release_date?.split("-")[0]
 
@@ -235,7 +279,15 @@ function App() {
         `${selectedMovie.title} (${movieYear})`
 
       const response = await axios.get(
-        `http://127.0.0.1:8000/api/recommend/?movie=${encodeURIComponent(backendMovieTitle)}&user_id=1`
+
+        `http://127.0.0.1:8000/api/recommend/?movie=${encodeURIComponent(backendMovieTitle)}`,
+
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+
       )
 
       const recommendedMovies =
@@ -289,10 +341,12 @@ function App() {
 
     fetchFavorites()
 
+    fetchWatchHistory()
+
   }, [])
 
   // =========================
-  // MOVIE ROW
+  // MOVIE ROW COMPONENT
   // =========================
 
   const MovieRow = ({
@@ -359,7 +413,21 @@ function App() {
     </div>
 
   )
+  const fetchWatchHistory = async () => {
 
+    try {
+
+      const data = await getWatchHistory()
+
+      setWatchHistory(data)
+
+    } catch (error) {
+
+      console.log(error)
+
+    }
+
+  }
   return (
 
     <div className="min-h-screen bg-black text-white">
@@ -372,9 +440,12 @@ function App() {
 
           {/* LOGO */}
 
-          <h1 className="text-3xl font-bold text-red-600">
+          <Link
+            to="/"
+            className="text-3xl font-bold text-red-600"
+          >
             🎬 CineMind AI
-          </h1>
+          </Link>
 
           {/* NAVIGATION */}
 
@@ -650,7 +721,6 @@ function App() {
                       handleFavorite(movie)
                     }
                     className="mt-4 w-full p-3 rounded-lg font-bold transition"
-
                     style={{
                       backgroundColor:
                         isFavorite(movie.title)
@@ -676,6 +746,55 @@ function App() {
         </div>
 
       )}
+
+      {/* CONTINUE WATCHING */}
+
+      {!searchedMovie &&
+        watchHistory.length > 0 && (
+
+          <div className="mb-14">
+
+            <h2 className="text-3xl font-bold mb-6 px-8">
+
+              👀 Continue Watching
+
+            </h2>
+
+            <div className="flex gap-5 overflow-x-auto px-8">
+
+              {watchHistory.map((movie) => (
+
+                <div
+                  key={movie.id}
+                  className="min-w-[220px] bg-zinc-900 rounded-2xl overflow-hidden hover:scale-105 transition duration-300"
+                >
+
+                  <img
+                    src={movie.poster_path}
+                    alt={movie.movie_title}
+                    className="rounded-xl h-[320px] w-full object-cover"
+                  />
+
+                  <div className="p-3">
+
+                    <h3 className="text-lg font-semibold line-clamp-2">
+
+                      {movie.movie_title}
+
+                    </h3>
+
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </div>
+
+        )}
+
       {/* HOMEPAGE */}
 
       {!searchedMovie && (
