@@ -1,7 +1,10 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { loginUser } from "../services/authService"
 
 function Login() {
+
+    const navigate = useNavigate()
 
     const [formData, setFormData] = useState({
         username: "",
@@ -32,7 +35,7 @@ function Login() {
 
             alert("Login Successful!")
 
-            console.log(response)
+            navigate("/")
 
         } catch (error) {
 

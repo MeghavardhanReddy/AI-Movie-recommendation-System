@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
+
+import {
+  addFavorite,
+  getFavorites,
+  removeFavorite
+} from './services/favoriteService'
 
 function App() {
 
@@ -17,12 +24,17 @@ function App() {
   const [popularMovies, setPopularMovies] = useState([])
   const [topRatedMovies, setTopRatedMovies] = useState([])
 
+  const [favorites, setFavorites] = useState([])
+
   const [activeCategory, setActiveCategory] = useState("home")
 
-  const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY
+  const TMDB_API_KEY =
+    import.meta.env.VITE_TMDB_API_KEY
 
-  // JWT TOKEN
-  const token = localStorage.getItem("token")
+  const token =
+    localStorage.getItem("token")
+
+  const navigate = useNavigate()
 
   // =========================
   // LOGOUT
@@ -32,10 +44,94 @@ function App() {
 
     localStorage.removeItem("token")
 
-    window.location.reload()
+    navigate("/")
 
   }
 
+  // =========================
+  // FETCH FAVORITES
+  // =========================
+
+  const fetchFavorites = async () => {
+
+    try {
+
+      const data = await getFavorites()
+
+      setFavorites(data)
+
+    } catch (error) {
+
+      console.log(error)
+
+    }
+
+  }
+
+  // =========================
+  // FAVORITE CHECK
+  // =========================
+
+  const isFavorite = (movieTitle) => {
+
+    return favorites.some(
+
+      (fav) => fav.movie_title === movieTitle
+
+    )
+
+  }
+
+  // =========================
+  // ADD FAVORITE
+  // =========================
+
+  const handleFavorite = async (movie) => {
+
+    try {
+
+      const existingFavorite = favorites.find(
+
+        (fav) => fav.movie_title === movie.title
+
+      )
+
+      // REMOVE FAVORITE
+
+      if (existingFavorite) {
+
+        await removeFavorite(
+          existingFavorite.id
+        )
+
+      }
+
+      // ADD FAVORITE
+
+      else {
+
+        await addFavorite({
+
+          movie_title: movie.title,
+
+          poster_path:
+            `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+
+        })
+
+      }
+
+      fetchFavorites()
+
+    } catch (error) {
+
+      console.log(error)
+
+      alert("Login required")
+
+    }
+
+  }
   // =========================
   // FETCH HOMEPAGE MOVIES
   // =========================
@@ -71,9 +167,17 @@ function App() {
         }
       )
 
-      setTrendingMovies(trendingResponse.data.results)
-      setPopularMovies(popularResponse.data.results)
-      setTopRatedMovies(topRatedResponse.data.results)
+      setTrendingMovies(
+        trendingResponse.data.results
+      )
+
+      setPopularMovies(
+        popularResponse.data.results
+      )
+
+      setTopRatedMovies(
+        topRatedResponse.data.results
+      )
 
     } catch (error) {
 
@@ -84,7 +188,7 @@ function App() {
   }
 
   // =========================
-  // GET AI RECOMMENDATIONS
+  // GET RECOMMENDATIONS
   // =========================
 
   const getRecommendations = async () => {
@@ -97,8 +201,6 @@ function App() {
 
       setSearchedMovie(movie)
 
-      // SEARCH MOVIE FROM TMDB
-
       const mainMovieResponse = await axios.get(
         `https://api.themoviedb.org/3/search/movie`,
         {
@@ -109,9 +211,9 @@ function App() {
         }
       )
 
-      // MOVIE NOT FOUND
-
-      if (mainMovieResponse.data.results.length === 0) {
+      if (
+        mainMovieResponse.data.results.length === 0
+      ) {
 
         alert("Movie not found")
 
@@ -121,22 +223,16 @@ function App() {
 
       }
 
-      // MAIN MOVIE
-
       const selectedMovie =
         mainMovieResponse.data.results[0]
 
       setMainMovieData(selectedMovie)
-
-      // MOVIELENS FORMAT
 
       const movieYear =
         selectedMovie.release_date?.split("-")[0]
 
       const backendMovieTitle =
         `${selectedMovie.title} (${movieYear})`
-
-      // DJANGO AI BACKEND
 
       const response = await axios.get(
         `http://127.0.0.1:8000/api/recommend/?movie=${encodeURIComponent(backendMovieTitle)}&user_id=1`
@@ -146,8 +242,6 @@ function App() {
         response.data.recommendations
 
       let movieResults = []
-
-      // TMDB DETAILS
 
       for (const movieName of recommendedMovies) {
 
@@ -161,7 +255,9 @@ function App() {
           }
         )
 
-        if (tmdbResponse.data.results.length > 0) {
+        if (
+          tmdbResponse.data.results.length > 0
+        ) {
 
           movieResults.push(
             tmdbResponse.data.results[0]
@@ -184,22 +280,31 @@ function App() {
   }
 
   // =========================
-  // LOAD HOMEPAGE
+  // INITIAL LOAD
   // =========================
 
   useEffect(() => {
 
     fetchHomepageMovies()
 
+    fetchFavorites()
+
   }, [])
 
   // =========================
-  // MOVIE ROW COMPONENT
+  // MOVIE ROW
   // =========================
 
-  const MovieRow = ({ title, movies }) => (
+  const MovieRow = ({
+    title,
+    movies,
+    sectionId
+  }) => (
 
-    <div className="mb-14">
+    <div
+      id={sectionId}
+      className="mb-14 scroll-mt-28"
+    >
 
       <h2 className="text-3xl font-bold mb-6 px-8">
         {title}
@@ -211,18 +316,39 @@ function App() {
 
           <div
             key={movie.id}
-            className="min-w-[220px] hover:scale-105 transition duration-300"
+            className="min-w-[220px] bg-zinc-900 rounded-2xl overflow-hidden hover:scale-105 transition duration-300 relative"
           >
+
+            {/* FAVORITE BUTTON */}
+
+            <button
+              onClick={() => handleFavorite(movie)}
+              className="absolute top-3 right-3 z-10 bg-black/70 px-3 py-1 rounded-full text-lg hover:scale-110 transition"
+            >
+
+              {isFavorite(movie.title)
+                ? "❤️"
+                : "🤍"}
+
+            </button>
 
             <img
               src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
               alt={movie.title}
-              className="rounded-xl h-[320px] object-cover"
+              className="rounded-xl h-[320px] w-full object-cover"
             />
 
-            <h3 className="mt-3 text-lg font-semibold">
-              {movie.title}
-            </h3>
+            <div className="p-3">
+
+              <h3 className="text-lg font-semibold line-clamp-2">
+                {movie.title}
+              </h3>
+
+              <p className="text-yellow-400 mt-2">
+                ⭐ {movie.vote_average}
+              </p>
+
+            </div>
 
           </div>
 
@@ -257,12 +383,19 @@ function App() {
             <button
               onClick={() => {
 
+                navigate("/")
+
                 setActiveCategory("home")
 
                 setSearchedMovie("")
                 setMoviesData([])
                 setMainMovieData(null)
                 setMovie("")
+
+                window.scrollTo({
+                  top: 0,
+                  behavior: "smooth"
+                })
 
               }}
               className={`${activeCategory === "home"
@@ -273,7 +406,17 @@ function App() {
             </button>
 
             <button
-              onClick={() => setActiveCategory("trending")}
+              onClick={() => {
+
+                setActiveCategory("trending")
+
+                document
+                  .getElementById("trending")
+                  ?.scrollIntoView({
+                    behavior: "smooth"
+                  })
+
+              }}
               className={`${activeCategory === "trending"
                 ? "text-red-500"
                 : "text-white"} hover:text-red-400 transition`}
@@ -282,7 +425,17 @@ function App() {
             </button>
 
             <button
-              onClick={() => setActiveCategory("popular")}
+              onClick={() => {
+
+                setActiveCategory("popular")
+
+                document
+                  .getElementById("popular")
+                  ?.scrollIntoView({
+                    behavior: "smooth"
+                  })
+
+              }}
               className={`${activeCategory === "popular"
                 ? "text-red-500"
                 : "text-white"} hover:text-red-400 transition`}
@@ -291,7 +444,17 @@ function App() {
             </button>
 
             <button
-              onClick={() => setActiveCategory("toprated")}
+              onClick={() => {
+
+                setActiveCategory("toprated")
+
+                document
+                  .getElementById("toprated")
+                  ?.scrollIntoView({
+                    behavior: "smooth"
+                  })
+
+              }}
               className={`${activeCategory === "toprated"
                 ? "text-red-500"
                 : "text-white"} hover:text-red-400 transition`}
@@ -301,7 +464,7 @@ function App() {
 
           </div>
 
-          {/* AUTH BUTTONS */}
+          {/* AUTH */}
 
           <div className="flex gap-4">
 
@@ -309,30 +472,41 @@ function App() {
 
               <>
 
-                <a
-                  href="/login"
+                <Link
+                  to="/login"
                   className="bg-zinc-800 px-5 py-2 rounded-lg hover:bg-zinc-700 transition"
                 >
                   Login
-                </a>
+                </Link>
 
-                <a
-                  href="/signup"
+                <Link
+                  to="/signup"
                   className="bg-red-600 px-5 py-2 rounded-lg hover:bg-red-700 transition"
                 >
                   Signup
-                </a>
+                </Link>
 
               </>
 
             ) : (
 
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 px-5 py-2 rounded-lg hover:bg-red-700 transition"
-              >
-                Logout
-              </button>
+              <>
+
+                <Link
+                  to="/favorites"
+                  className="bg-zinc-800 px-5 py-2 rounded-lg hover:bg-zinc-700 transition"
+                >
+                  Favorites
+                </Link>
+
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-600 px-5 py-2 rounded-lg hover:bg-red-700 transition"
+                >
+                  Logout
+                </button>
+
+              </>
 
             )}
 
@@ -352,7 +526,9 @@ function App() {
             type="text"
             placeholder="Search movie..."
             value={movie}
-            onChange={(e) => setMovie(e.target.value)}
+            onChange={(e) =>
+              setMovie(e.target.value)
+            }
             className="p-4 w-full sm:w-[400px] rounded-lg bg-white text-black text-lg outline-none"
           />
 
@@ -367,55 +543,58 @@ function App() {
 
       </div>
 
-      {/* LOADING */}
-
-      {loading && (
-
-        <div className="px-8">
-
-          <h2 className="text-2xl text-zinc-300 animate-pulse">
-            Loading recommendations...
-          </h2>
-
-        </div>
-
-      )}
-
-      {/* HERO BANNER */}
+      {/* SEARCHED MOVIE */}
 
       {mainMovieData && !loading && (
 
-        <div className="relative w-full h-[550px] mb-14 overflow-hidden">
+        <div className="px-8 pt-4 pb-10">
 
-          <img
-            src={`https://image.tmdb.org/t/p/original${mainMovieData.backdrop_path}`}
-            alt={mainMovieData.title}
-            className="w-full h-full object-cover opacity-40"
-          />
+          <h2 className="text-4xl font-bold mb-8">
 
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent flex items-end">
+            🎬 Search Result:
 
-            <div className="p-10 max-w-3xl">
+            <span className="text-red-500">
+              {" "} {mainMovieData.title}
+            </span>
 
-              <h1 className="text-6xl font-bold mb-4">
+          </h2>
+
+          <div className="w-[320px] bg-zinc-900 rounded-2xl overflow-hidden">
+
+            <img
+              src={`https://image.tmdb.org/t/p/w500${mainMovieData.poster_path}`}
+              alt={mainMovieData.title}
+              className="w-full h-[450px] object-cover"
+            />
+
+            <div className="p-5">
+
+              <h2 className="text-2xl font-bold mb-3">
                 {mainMovieData.title}
-              </h1>
+              </h2>
 
-              <p className="text-zinc-300 text-lg mb-4 line-clamp-4">
-                {mainMovieData.overview}
+              <p className="text-yellow-400 text-lg mb-4">
+                ⭐ {mainMovieData.vote_average}
               </p>
 
-              <div className="flex gap-6 text-lg">
+              <button
+                onClick={() =>
+                  handleFavorite(mainMovieData)
+                }
+                className="mt-4 w-full p-3 rounded-lg font-bold transition"
+                style={{
+                  backgroundColor:
+                    isFavorite(mainMovieData.title)
+                      ? "#dc2626"
+                      : "#27272a"
+                }}
+              >
 
-                <p className="text-yellow-400">
-                  ⭐ {mainMovieData.vote_average}
-                </p>
+                {isFavorite(mainMovieData.title)
+                  ? "❤️ Favorited"
+                  : "🤍 Add to Favorites"}
 
-                <p className="text-zinc-300">
-                  📅 {mainMovieData.release_date}
-                </p>
-
-              </div>
+              </button>
 
             </div>
 
@@ -425,7 +604,7 @@ function App() {
 
       )}
 
-      {/* AI RECOMMENDATIONS */}
+      {/* RECOMMENDATIONS */}
 
       {searchedMovie && !loading && (
 
@@ -447,7 +626,7 @@ function App() {
 
               <div
                 key={index}
-                className="bg-zinc-900 rounded-2xl overflow-hidden shadow-lg hover:scale-105 hover:shadow-red-500/20 transition duration-300"
+                className="bg-zinc-900 rounded-2xl overflow-hidden"
               >
 
                 <img
@@ -458,7 +637,7 @@ function App() {
 
                 <div className="p-4">
 
-                  <h2 className="text-xl font-bold mb-2 line-clamp-1">
+                  <h2 className="text-xl font-bold mb-2">
                     {movie.title}
                   </h2>
 
@@ -466,13 +645,25 @@ function App() {
                     ⭐ {movie.vote_average}
                   </p>
 
-                  <p className="text-zinc-400 text-sm mb-2">
-                    📅 {movie.release_date}
-                  </p>
+                  <button
+                    onClick={() =>
+                      handleFavorite(movie)
+                    }
+                    className="mt-4 w-full p-3 rounded-lg font-bold transition"
 
-                  <p className="text-sm text-zinc-300 line-clamp-4">
-                    {movie.overview}
-                  </p>
+                    style={{
+                      backgroundColor:
+                        isFavorite(movie.title)
+                          ? "#dc2626"
+                          : "#27272a"
+                    }}
+                  >
+
+                    {isFavorite(movie.title)
+                      ? "❤️ Favorited"
+                      : "🤍 Add to Favorites"}
+
+                  </button>
 
                 </div>
 
@@ -485,7 +676,6 @@ function App() {
         </div>
 
       )}
-
       {/* HOMEPAGE */}
 
       {!searchedMovie && (
@@ -495,16 +685,19 @@ function App() {
           <MovieRow
             title="🔥 Trending Movies"
             movies={trendingMovies}
+            sectionId="trending"
           />
 
           <MovieRow
             title="🎬 Popular Movies"
             movies={popularMovies}
+            sectionId="popular"
           />
 
           <MovieRow
             title="⭐ Top Rated Movies"
             movies={topRatedMovies}
+            sectionId="toprated"
           />
 
         </div>

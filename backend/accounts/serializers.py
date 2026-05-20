@@ -1,6 +1,12 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
+from .models import FavoriteMovie
+
+
+# =========================
+# REGISTER SERIALIZER
+# =========================
 
 class RegisterSerializer(serializers.ModelSerializer):
 
@@ -27,3 +33,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
         return user
+
+
+# =========================
+# FAVORITE MOVIE SERIALIZER
+# =========================
+
+class FavoriteMovieSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = FavoriteMovie
+
+        fields = '__all__'
