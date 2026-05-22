@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: cinemind_db
+    environment:
+      POSTGRES_DB: cinemind_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Megha2005@
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: cinemind_backend
+    volumes:
+      - ./backend:/app/backend
+      - ./datasets:/app/datasets
+      - ./ml-engine:/app/ml-engine
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=cinemind-super-secret-key
+      - DATABASE_URL=postgresql://postgres:Megha2005@@db:5432/cinemind_db
+    depends_on:
+      - db
+    restart: always
+
+volumes:
+  postgres_data:

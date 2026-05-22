@@ -1,7 +1,10 @@
 import { useState } from "react"
+import { useNavigate, Link } from "react-router-dom"
 import { registerUser } from "../services/authService"
 
 function Signup() {
+
+    const navigate = useNavigate()
 
     const [formData, setFormData] = useState({
         username: "",
@@ -29,6 +32,8 @@ function Signup() {
             alert("Signup Successful!")
 
             console.log(response)
+
+            navigate("/login")
 
         } catch (error) {
 
@@ -83,6 +88,13 @@ function Signup() {
                 >
                     Signup
                 </button>
+
+                <p className="text-zinc-400 text-center mt-6">
+                    Already have an account?{" "}
+                    <Link to="/login" className="text-red-600 hover:underline">
+                        Login
+                    </Link>
+                </p>
 
             </form>
 

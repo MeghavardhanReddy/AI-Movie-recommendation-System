@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { loginUser } from "../services/authService"
 
 function Login() {
@@ -82,6 +82,13 @@ function Login() {
                 >
                     Login
                 </button>
+
+                <p className="text-zinc-400 text-center mt-6">
+                    Don't have an account?{" "}
+                    <Link to="/signup" className="text-red-600 hover:underline">
+                        Sign up
+                    </Link>
+                </p>
 
             </form>
 
