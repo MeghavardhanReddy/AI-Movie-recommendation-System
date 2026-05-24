@@ -169,43 +169,6 @@ def add_watch_history(request):
 
     return Response(serializer.data)
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-
-def add_watch_history(request):
-
-    data = request.data
-
-    existing_movie = WatchedMovie.objects.filter(
-
-        user=request.user,
-
-        movie_title=data['movie_title']
-
-    ).first()
-
-    if existing_movie:
-
-        return Response({
-            "message": "Already in history"
-        })
-
-    watched_movie = WatchedMovie.objects.create(
-
-        user=request.user,
-
-        movie_title=data['movie_title'],
-
-        poster_path=data['poster_path']
-
-    )
-
-    serializer = WatchedMovieSerializer(
-        watched_movie
-    )
-
-    return Response(serializer.data)
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 

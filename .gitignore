@@ -1,24 +1,70 @@
-# Python
+# =========================
+# PYTHON
+# =========================
+
 venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# Node
+# =========================
+# NODE
+# =========================
+
 node_modules/
 
-# Environment variables
+# =========================
+# ENV FILES
+# =========================
+
 .env
+backend/.env
+frontend/.env
 
-# Database
+# =========================
+# DATABASE
+# =========================
+
 db.sqlite3
+*.sqlite3
 
-# VS Code
+# =========================
+# ML MODELS
+# =========================
+
+ml-engine/saved_models/
+
+# =========================
+# BUILD FILES
+# =========================
+
+dist/
+build/
+staticfiles/
+
+# =========================
+# VSCODE
+# =========================
+
 .vscode/
 
-# Build files
-dist/
+# =========================
+# OS FILES
+# =========================
 
-# OS
 .DS_Store
 Thumbs.db
-ml-engine/saved_models/
+
+# =========================
+# LOG FILES
+# =========================
+
+*.log
+
+# =========================
+# CACHE
+# =========================
+
+.pytest_cache/
+.mypy_cache/

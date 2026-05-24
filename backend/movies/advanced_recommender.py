@@ -1,42 +1,85 @@
+import os
 import pandas as pd
 import joblib
+
+# =========================
+# BASE PATHS
+# =========================
+
+BASE_DIR = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.abspath(__file__)
+        )
+    )
+)
+
+DATASET_PATH = os.path.join(
+    BASE_DIR,
+    'datasets',
+    'ml-latest-small'
+)
+
+MODEL_PATH = os.path.join(
+    BASE_DIR,
+    'ml-engine',
+    'saved_models'
+)
 
 # =========================
 # LOAD DATASETS
 # =========================
 
 movies = pd.read_csv(
-    '../datasets/ml-latest-small/movies.csv'
+    os.path.join(
+        DATASET_PATH,
+        'movies.csv'
+    )
 )
 
 ratings = pd.read_csv(
-    '../datasets/ml-latest-small/ratings.csv'
+    os.path.join(
+        DATASET_PATH,
+        'ratings.csv'
+    )
 )
 
 # =========================
-# LOAD SAVED MODELS
+# LOAD MODELS
 # =========================
 
 svd_model = joblib.load(
-    '../ml-engine/saved_models/svd_model.pkl'
+    os.path.join(
+        MODEL_PATH,
+        'svd_model.pkl'
+    )
 )
 
 tfidf = joblib.load(
-    '../ml-engine/saved_models/tfidf.pkl'
+    os.path.join(
+        MODEL_PATH,
+        'tfidf.pkl'
+    )
 )
 
 cosine_sim = joblib.load(
-    '../ml-engine/saved_models/cosine_sim.pkl'
+    os.path.join(
+        MODEL_PATH,
+        'cosine_sim.pkl'
+    )
 )
 
 indices = joblib.load(
-    '../ml-engine/saved_models/indices.pkl'
+    os.path.join(
+        MODEL_PATH,
+        'indices.pkl'
+    )
 )
 
-print("Saved AI Models Loaded Successfully!")
+print("✅ AI Models Loaded Successfully!")
 
 # =========================
-# ADVANCED HYBRID AI
+# HYBRID RECOMMENDER
 # =========================
 
 def hybrid_recommendation(
@@ -53,7 +96,6 @@ def hybrid_recommendation(
 
         return ["Movie not found"]
 
-    # Content similarity
     sim_scores = list(
         enumerate(cosine_sim[idx])
     )
@@ -76,7 +118,6 @@ def hybrid_recommendation(
 
     predictions = []
 
-    # Collaborative filtering score
     for _, row in candidate_movies.iterrows():
 
         predicted_rating = svd_model.predict(
@@ -91,13 +132,11 @@ def hybrid_recommendation(
             )
         )
 
-    # Sort predictions
     predictions.sort(
         key=lambda x: x[1],
         reverse=True
     )
 
-    # Top recommendations
     recommendations = [
         movie[0]
         for movie in predictions[:top_n]

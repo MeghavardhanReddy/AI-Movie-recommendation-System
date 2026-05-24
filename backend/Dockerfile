@@ -1,35 +1,79 @@
-# Use official lightweight Python image
+# =========================
+# BASE IMAGE
+# =========================
+
 FROM python:3.11-slim
 
-# Prevent Python from writing .pyc files and buffer stdout/stderr
+# =========================
+# ENV VARIABLES
+# =========================
+
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install system dependencies needed for compiling python packages (e.g. scikit-surprise, psycopg2)
+# =========================
+# SYSTEM DEPENDENCIES
+# =========================
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    gcc \
+    g++ \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory inside the container
+# =========================
+# WORK DIRECTORY
+# =========================
+
 WORKDIR /app
 
-# Copy requirements.txt to leverage Docker layer caching
+# =========================
+# COPY REQUIREMENTS
+# =========================
+
 COPY backend/requirements.txt /app/backend/
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r /app/backend/requirements.txt
+# =========================
+# INSTALL PYTHON PACKAGES
+# =========================
 
-# Copy application directories (necessary for non-volume runs/production)
+RUN pip install --upgrade pip
+
+RUN pip install --no-cache-dir \
+    -r /app/backend/requirements.txt
+
+# =========================
+# COPY PROJECT FILES
+# =========================
+
 COPY backend /app/backend
 COPY datasets /app/datasets
 COPY ml-engine /app/ml-engine
 
-# Set working directory to the backend Django project root
+# =========================
+# DJANGO WORKDIR
+# =========================
+
 WORKDIR /app/backend
 
-# Expose Django default port
+# =========================
+# STATIC FILES
+# =========================
+
+RUN python manage.py collectstatic --noinput || true
+
+# =========================
+# EXPOSE PORT
+# =========================
+
 EXPOSE 8000
 
-# Default command to run the development server
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# =========================
+# START SERVER
+# =========================
+
+CMD gunicorn config.wsgi:application \
+    --bind 0.0.0.0:8000 \
+    --workers 2 \
+    --timeout 120
