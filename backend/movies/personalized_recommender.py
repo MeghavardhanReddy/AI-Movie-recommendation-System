@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import joblib
 
@@ -7,28 +8,98 @@ from accounts.models import (
 )
 
 # =========================
+# BASE PATHS
+# =========================
+
+BASE_DIR = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.abspath(__file__)
+        )
+    )
+)
+
+DATASET_PATH = os.path.join(
+    BASE_DIR,
+    'datasets',
+    'ml-latest-small'
+)
+
+MODEL_PATH = os.path.join(
+    BASE_DIR,
+    'ml-engine',
+    'saved_models'
+)
+
+# =========================
 # LOAD DATASETS
 # =========================
 
 movies = pd.read_csv(
-    '../datasets/ml-latest-small/movies.csv'
+    os.path.join(
+        DATASET_PATH,
+        'movies.csv'
+    )
 )
 
 # =========================
-# LOAD SAVED MODELS
+# LOAD MODELS SAFELY
 # =========================
 
-svd_model = joblib.load(
-    '../ml-engine/saved_models/svd_model.pkl'
+svd_model = None
+cosine_sim = None
+indices = None
+
+svd_model_path = os.path.join(
+    MODEL_PATH,
+    'svd_model.pkl'
 )
 
-cosine_sim = joblib.load(
-    '../ml-engine/saved_models/cosine_sim.pkl'
+cosine_path = os.path.join(
+    MODEL_PATH,
+    'cosine_sim.pkl'
 )
 
-indices = joblib.load(
-    '../ml-engine/saved_models/indices.pkl'
+indices_path = os.path.join(
+    MODEL_PATH,
+    'indices.pkl'
 )
+
+if os.path.exists(svd_model_path):
+
+    svd_model = joblib.load(
+        svd_model_path
+    )
+
+    print("✅ SVD model loaded")
+
+else:
+
+    print("⚠️ SVD model missing")
+
+if os.path.exists(cosine_path):
+
+    cosine_sim = joblib.load(
+        cosine_path
+    )
+
+    print("✅ Cosine similarity loaded")
+
+else:
+
+    print("⚠️ Cosine similarity missing")
+
+if os.path.exists(indices_path):
+
+    indices = joblib.load(
+        indices_path
+    )
+
+    print("✅ Indices loaded")
+
+else:
+
+    print("⚠️ Indices missing")
 
 # =========================
 # USER PREFERENCE LEARNING
@@ -46,16 +117,12 @@ def get_user_preferences(user):
 
     user_preferences = []
 
-    # FAVORITES GET HIGHER WEIGHT
-
     for movie in favorite_movies:
 
         user_preferences.append({
             "title": movie.movie_title,
             "weight": 3
         })
-
-    # WATCH HISTORY GETS MEDIUM WEIGHT
 
     for movie in watched_movies:
 
@@ -65,6 +132,7 @@ def get_user_preferences(user):
         })
 
     return user_preferences
+
 # =========================
 # PERSONALIZED AI
 # =========================
@@ -76,6 +144,10 @@ def personalized_recommendation(
     top_n=10
 
 ):
+
+    if not svd_model or cosine_sim is None or indices is None:
+
+        return ["AI recommendation engine unavailable"]
 
     try:
 
